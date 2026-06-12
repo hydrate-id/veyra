@@ -34,7 +34,7 @@ func (r *Registry) GenerateCaddyfile() (string, error) {
 
 	var sb strings.Builder
 
-	// Add global block to explicitly configure the admin API on localhost, custom ports, and trusted proxies
+	// Add global block to explicitly configure the admin API on localhost, custom proxies, and trusted proxies
 	sb.WriteString("{\n")
 	sb.WriteString(fmt.Sprintf("\tadmin localhost:%d\n", adminPort))
 	if httpPort != 80 {
@@ -43,6 +43,7 @@ func (r *Registry) GenerateCaddyfile() (string, error) {
 	if httpsPort != 443 {
 		sb.WriteString(fmt.Sprintf("\thttps_port %d\n", httpsPort))
 	}
+	sb.WriteString("\torder body_rewriter after encode\n")
 	sb.WriteString("\tservers {\n")
 	sb.WriteString("\t\ttrusted_proxies static private_ranges\n")
 	sb.WriteString("\t}\n")
@@ -75,6 +76,7 @@ func (r *Registry) GenerateCaddyfile() (string, error) {
 		sb.WriteString(fmt.Sprintf("\treverse_proxy %s {\n", targetForCaddy))
 		sb.WriteString(fmt.Sprintf("\t\theader_up Host %s\n", hostHeaderForCaddy))
 		sb.WriteString(fmt.Sprintf("\t\theader_up X-Forwarded-Host %s\n", hostHeaderForCaddy))
+		sb.WriteString("\t\theader_up -Accept-Encoding\n")
 		sb.WriteString(fmt.Sprintf("\t\theader_down Location \"http://%s(.*)\" \"https://{host}$1\"\n", hostHeaderForCaddy))
 		sb.WriteString(fmt.Sprintf("\t\theader_down Location \"https://%s(.*)\" \"https://{host}$1\"\n", hostHeaderForCaddy))
 		sb.WriteString(fmt.Sprintf("\t\theader_down Set-Cookie \"%s\" \"{host}\"\n", hostHeaderForCaddy))
@@ -86,6 +88,7 @@ func (r *Registry) GenerateCaddyfile() (string, error) {
 		}
 
 		sb.WriteString("\t}\n")
+		sb.WriteString(fmt.Sprintf("\tbody_rewriter %s {host}\n", hostHeaderForCaddy))
 		sb.WriteString("}\n\n")
 	}
 

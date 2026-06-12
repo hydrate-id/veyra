@@ -77,8 +77,17 @@ func TestRegistryAndGenerator(t *testing.T) {
 	if !strings.Contains(caddyfile, "header_up X-Forwarded-Host localhost:8000") {
 		t.Errorf("expected Caddyfile to contain header_up X-Forwarded-Host localhost:8000, got: %s", caddyfile)
 	}
+	if !strings.Contains(caddyfile, "header_up -Accept-Encoding") {
+		t.Errorf("expected Caddyfile to contain header_up -Accept-Encoding, got: %s", caddyfile)
+	}
 	if !strings.Contains(caddyfile, "header_down Set-Cookie \"localhost:8000\" \"{host}\"") {
 		t.Errorf("expected Caddyfile to contain header_down Set-Cookie \"localhost:8000\" \"{host}\", got: %s", caddyfile)
+	}
+	if !strings.Contains(caddyfile, "order body_rewriter after encode") {
+		t.Errorf("expected Caddyfile to contain order body_rewriter after encode, got: %s", caddyfile)
+	}
+	if !strings.Contains(caddyfile, "body_rewriter localhost:8000 {host}") {
+		t.Errorf("expected Caddyfile to contain body_rewriter localhost:8000 {host}, got: %s", caddyfile)
 	}
 
 	err = r.Remove("example.com")
