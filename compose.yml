@@ -1,7 +1,6 @@
 services:
   veyra:
-    build: .
-    container_name: veyra
+    image: ghcr.io/korfra/veyra:latest
     ports:
       - "8080:8080"
       - "8443:8443"
