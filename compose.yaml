@@ -1,0 +1,14 @@
+services:
+  veyra:
+    build: .
+    container_name: veyra
+    ports:
+      - "8080:8080"
+      - "8443:8443"
+      - "2019:2019"
+    volumes:
+      - veyra-data:/data
+    restart: unless-stopped
+
+volumes:
+  veyra-data:
