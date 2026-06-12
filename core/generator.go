@@ -71,16 +71,14 @@ func (r *Registry) GenerateCaddyfile() (string, error) {
 			}
 		}
 
-		// Explicitly define both HTTP and HTTPS schemes to disable Caddy's automatic HTTP->HTTPS
-		// redirects which default to port 443 and bypass Veyra's custom ports.
 		sb.WriteString(fmt.Sprintf("http://%s, https://%s {\n", rule.PublicPattern, rule.PublicPattern))
 		sb.WriteString(fmt.Sprintf("\treverse_proxy %s {\n", targetForCaddy))
 		sb.WriteString(fmt.Sprintf("\t\theader_up Host %s\n", hostHeaderForCaddy))
-		// Rewrite redirect location response headers dynamically using {host}
+		sb.WriteString(fmt.Sprintf("\t\theader_up X-Forwarded-Host %s\n", hostHeaderForCaddy))
 		sb.WriteString(fmt.Sprintf("\t\theader_down Location \"http://%s(.*)\" \"https://{host}$1\"\n", hostHeaderForCaddy))
 		sb.WriteString(fmt.Sprintf("\t\theader_down Location \"https://%s(.*)\" \"https://{host}$1\"\n", hostHeaderForCaddy))
+		sb.WriteString(fmt.Sprintf("\t\theader_down Set-Cookie \"%s\" \"{host}\"\n", hostHeaderForCaddy))
 
-		// If proxying to HTTPS backend, skip TLS verification (common for local Valet CA/Self-signed certs)
 		if isHTTPS {
 			sb.WriteString("\t\ttransport http {\n")
 			sb.WriteString("\t\t\ttls_insecure_skip_verify\n")

@@ -74,6 +74,12 @@ func TestRegistryAndGenerator(t *testing.T) {
 	if !strings.Contains(caddyfile, "https_port 8443") {
 		t.Errorf("expected Caddyfile to contain https_port 8443: %s", caddyfile)
 	}
+	if !strings.Contains(caddyfile, "header_up X-Forwarded-Host localhost:8000") {
+		t.Errorf("expected Caddyfile to contain header_up X-Forwarded-Host localhost:8000, got: %s", caddyfile)
+	}
+	if !strings.Contains(caddyfile, "header_down Set-Cookie \"localhost:8000\" \"{host}\"") {
+		t.Errorf("expected Caddyfile to contain header_down Set-Cookie \"localhost:8000\" \"{host}\", got: %s", caddyfile)
+	}
 
 	err = r.Remove("example.com")
 	if err != nil {
