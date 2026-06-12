@@ -241,6 +241,14 @@ func TestCLIExitErrors(t *testing.T) {
 		t.Errorf("expected exit code 1 for invalid backup import, got: %d", code)
 	}
 
+	if code := runWithExitCheck("import", "invalid_format", invalidJsonFile); code != 1 {
+		t.Errorf("expected exit code 1 for invalid import format, got: %d", code)
+	}
+
+	if code := runWithExitCheck("export", "json", "/nonexistent-dir/file.json"); code != 1 {
+		t.Errorf("expected exit code 1 for invalid export file path, got: %d", code)
+	}
+
 	originalDbPath := dbPath
 	dbPath = "/nonexistent-dir/veyra.db"
 	if code := runWithExitCheck("list"); code != 1 {
@@ -282,4 +290,133 @@ func TestExecuteError(t *testing.T) {
 	os.Args = []string{"veyra", "nonexistent-command"}
 
 	Execute()
+}
+
+func TestCLIVerboseAndHTTPS(t *testing.T) {
+	dbPath = "test_verbose_https.db"
+	defer os.Remove(dbPath)
+
+	var buf *bytes.Buffer
+
+	executeCommand := func(args ...string) (string, error) {
+		verbose = false
+		httpsEnabled = false
+		buf = new(bytes.Buffer)
+		RootCmd.SetOut(buf)
+		RootCmd.SetErr(buf)
+		RootCmd.SetArgs(args)
+		err := RootCmd.Execute()
+		return buf.String(), err
+	}
+
+	_, err := executeCommand("add", "domain1.test", "localhost:8000")
+	if err != nil {
+		t.Fatalf("failed to add: %v", err)
+	}
+
+	caddyfile, err := executeCommand("export", "caddy")
+	if err != nil {
+		t.Fatalf("failed to export: %v", err)
+	}
+	if strings.Contains(caddyfile, "https_port") || strings.Contains(caddyfile, "https://domain1.test") {
+		t.Errorf("expected HTTPS to be disabled by default, got: %s", caddyfile)
+	}
+
+	_ = caddy.Stop()
+
+	oldExit := osExit
+	defer func() { osExit = oldExit }()
+
+	var exitedCode int
+	osExit = func(code int) {
+		exitedCode = code
+		panic("exited")
+	}
+
+	runReloadWithPanic := func(args ...string) (string, int) {
+		exitedCode = 0
+		func() {
+			defer func() {
+				if r := recover(); r != nil {
+				}
+			}()
+			_, _ = executeCommand(args...)
+		}()
+		return buf.String(), exitedCode
+	}
+
+	outReloadSilent, codeSilent := runReloadWithPanic("reload")
+	if codeSilent != 1 {
+		t.Errorf("expected exit code 1 on reload failure, got: %d", codeSilent)
+	}
+	if !strings.Contains(outReloadSilent, "Error: Could not reload Caddy configuration (is 'veyra start' running?)") {
+		t.Errorf("expected reload silent output to contain clean message, got: %q", outReloadSilent)
+	}
+	if strings.Contains(outReloadSilent, "connection refused") {
+		t.Errorf("expected reload silent output to NOT contain raw dial error, got: %q", outReloadSilent)
+	}
+
+	outReloadVerbose, codeVerbose := runReloadWithPanic("reload", "--verbose")
+	if codeVerbose != 1 {
+		t.Errorf("expected exit code 1 on reload failure with verbose, got: %d", codeVerbose)
+	}
+	if !strings.Contains(outReloadVerbose, "Error reloading Caddy:") {
+		t.Errorf("expected reload verbose output to contain Error reloading Caddy, got: %q", outReloadVerbose)
+	}
+
+	outAddSilent, err := executeCommand("add", "domain2.test", "localhost:8000")
+	if err != nil {
+		t.Fatalf("add command failed: %v", err)
+	}
+	if strings.Contains(outAddSilent, "Warning: Could not reload Caddy configuration") {
+		t.Errorf("expected add silent reload to suppress warning, got: %q", outAddSilent)
+	}
+
+	outAddVerbose, err := executeCommand("add", "domain3.test", "localhost:8000", "--verbose")
+	if err != nil {
+		t.Fatalf("add command failed with verbose: %v", err)
+	}
+	if !strings.Contains(outAddVerbose, "Warning: Could not reload Caddy configuration") {
+		t.Errorf("expected add verbose reload to show warning, got: %q", outAddVerbose)
+	}
+
+	outRemoveSilent, err := executeCommand("remove", "domain2.test")
+	if err != nil {
+		t.Fatalf("remove command failed: %v", err)
+	}
+	if strings.Contains(outRemoveSilent, "Warning: Could not reload Caddy configuration") {
+		t.Errorf("expected remove silent reload to suppress warning, got: %q", outRemoveSilent)
+	}
+
+	outRemoveVerbose, err := executeCommand("remove", "domain3.test", "--verbose")
+	if err != nil {
+		t.Fatalf("remove command failed with verbose: %v", err)
+	}
+	if !strings.Contains(outRemoveVerbose, "Warning: Could not reload Caddy configuration") {
+		t.Errorf("expected remove verbose reload to show warning, got: %q", outRemoveVerbose)
+	}
+
+	go func() {
+		bufSub := new(bytes.Buffer)
+		RootCmd.SetOut(bufSub)
+		RootCmd.SetErr(bufSub)
+		RootCmd.SetArgs([]string{"start", "--http-port", "8084", "--https-port", "8447", "--admin-port", "2023", "--https"})
+		_ = RootCmd.Execute()
+	}()
+	time.Sleep(500 * time.Millisecond)
+	_ = syscall.Kill(syscall.Getpid(), syscall.SIGINT)
+	time.Sleep(200 * time.Millisecond)
+
+	reg, cleanup, err := InitRegistry()
+	if err != nil {
+		t.Fatalf("failed to init registry: %v", err)
+	}
+	enabled, err := reg.IsHTTPSEnabled()
+	cleanup()
+	if err != nil {
+		t.Fatalf("failed to check HTTPS: %v", err)
+	}
+	if !enabled {
+		t.Errorf("expected HTTPS to be enabled after start --https")
+	}
 }

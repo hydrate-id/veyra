@@ -40,8 +40,10 @@ var addCmd = &cobra.Command{
 
 		err = caddy.Reload(caddyfileContent, adminPort)
 		if err != nil {
-			cmd.Printf("Warning: Could not reload Caddy configuration: %v\n", err)
-			cmd.Println("Start the veyra daemon ('veyra start') to apply the rules.")
+			if verbose {
+				cmd.Printf("Warning: Could not reload Caddy configuration: %v\n", err)
+				cmd.Println("Start the veyra daemon ('veyra start') to apply the rules.")
+			}
 		} else {
 			cmd.Println("Caddy configuration reloaded successfully.")
 		}

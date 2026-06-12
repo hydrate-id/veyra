@@ -32,6 +32,11 @@ func (r *Registry) GenerateCaddyfile() (string, error) {
 		return "", err
 	}
 
+	httpsEnabled, err := r.IsHTTPSEnabled()
+	if err != nil {
+		return "", err
+	}
+
 	var sb strings.Builder
 
 	// Add global block to explicitly configure the admin API on localhost, custom proxies, and trusted proxies
@@ -40,7 +45,7 @@ func (r *Registry) GenerateCaddyfile() (string, error) {
 	if httpPort != 80 {
 		sb.WriteString(fmt.Sprintf("\thttp_port %d\n", httpPort))
 	}
-	if httpsPort != 443 {
+	if httpsEnabled && httpsPort != 443 {
 		sb.WriteString(fmt.Sprintf("\thttps_port %d\n", httpsPort))
 	}
 	sb.WriteString("\torder body_rewriter after encode\n")
@@ -72,7 +77,11 @@ func (r *Registry) GenerateCaddyfile() (string, error) {
 			}
 		}
 
-		sb.WriteString(fmt.Sprintf("http://%s, https://%s {\n", rule.PublicPattern, rule.PublicPattern))
+		if httpsEnabled {
+			sb.WriteString(fmt.Sprintf("http://%s, https://%s {\n", rule.PublicPattern, rule.PublicPattern))
+		} else {
+			sb.WriteString(fmt.Sprintf("http://%s {\n", rule.PublicPattern))
+		}
 		sb.WriteString(fmt.Sprintf("\treverse_proxy %s {\n", targetForCaddy))
 		sb.WriteString(fmt.Sprintf("\t\theader_up Host %s\n", hostHeaderForCaddy))
 		sb.WriteString(fmt.Sprintf("\t\theader_up X-Forwarded-Host %s\n", hostHeaderForCaddy))
@@ -83,8 +92,13 @@ func (r *Registry) GenerateCaddyfile() (string, error) {
 			sb.WriteString("\t\theader_up X-Forwarded-Port 80\n")
 		}
 		sb.WriteString("\t\theader_up -Accept-Encoding\n")
-		sb.WriteString(fmt.Sprintf("\t\theader_down Location \"http://%s(.*)\" \"https://{host}$1\"\n", hostHeaderForCaddy))
-		sb.WriteString(fmt.Sprintf("\t\theader_down Location \"https://%s(.*)\" \"https://{host}$1\"\n", hostHeaderForCaddy))
+		if httpsEnabled {
+			sb.WriteString(fmt.Sprintf("\t\theader_down Location \"http://%s(.*)\" \"https://{host}$1\"\n", hostHeaderForCaddy))
+			sb.WriteString(fmt.Sprintf("\t\theader_down Location \"https://%s(.*)\" \"https://{host}$1\"\n", hostHeaderForCaddy))
+		} else {
+			sb.WriteString(fmt.Sprintf("\t\theader_down Location \"http://%s(.*)\" \"http://{host}$1\"\n", hostHeaderForCaddy))
+			sb.WriteString(fmt.Sprintf("\t\theader_down Location \"https://%s(.*)\" \"http://{host}$1\"\n", hostHeaderForCaddy))
+		}
 		sb.WriteString(fmt.Sprintf("\t\theader_down Set-Cookie \"%s\" \"{host}\"\n", hostHeaderForCaddy))
 
 		if isHTTPS {

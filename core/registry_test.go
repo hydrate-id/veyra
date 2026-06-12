@@ -76,8 +76,8 @@ func TestRegistryAndGenerator(t *testing.T) {
 	if !strings.Contains(caddyfile, "http_port 8080") {
 		t.Errorf("expected Caddyfile to contain http_port 8080: %s", caddyfile)
 	}
-	if !strings.Contains(caddyfile, "https_port 8443") {
-		t.Errorf("expected Caddyfile to contain https_port 8443: %s", caddyfile)
+	if strings.Contains(caddyfile, "https_port 8443") {
+		t.Errorf("expected Caddyfile to NOT contain https_port 8443 when disabled: %s", caddyfile)
 	}
 	if !strings.Contains(caddyfile, "header_up X-Forwarded-Host localhost:8000") {
 		t.Errorf("expected Caddyfile to contain header_up X-Forwarded-Host localhost:8000, got: %s", caddyfile)
@@ -94,14 +94,33 @@ func TestRegistryAndGenerator(t *testing.T) {
 	if !strings.Contains(caddyfile, "body_rewriter localhost:8000 {host}") {
 		t.Errorf("expected Caddyfile to contain body_rewriter localhost:8000 {host}, got: %s", caddyfile)
 	}
-	if !strings.Contains(caddyfile, "header_up X-Forwarded-Proto https") {
-		t.Errorf("expected Caddyfile to contain header_up X-Forwarded-Proto https, got: %s", caddyfile)
-	}
 	if !strings.Contains(caddyfile, "header_up X-Forwarded-Port 80") {
 		t.Errorf("expected Caddyfile to contain header_up X-Forwarded-Port 80, got: %s", caddyfile)
 	}
-	if !strings.Contains(caddyfile, "header_up X-Forwarded-Port 443") {
-		t.Errorf("expected Caddyfile to contain header_up X-Forwarded-Port 443, got: %s", caddyfile)
+	if strings.Contains(caddyfile, "https://example.com") {
+		t.Errorf("expected Caddyfile to NOT contain https://example.com when disabled, got: %s", caddyfile)
+	}
+
+	err = r.SetHTTPSEnabled(true)
+	if err != nil {
+		t.Fatalf("failed to enable HTTPS: %v", err)
+	}
+
+	caddyfileHTTPS, err := r.GenerateCaddyfile()
+	if err != nil {
+		t.Fatalf("failed to generate Caddyfile with HTTPS: %v", err)
+	}
+	if !strings.Contains(caddyfileHTTPS, "https_port 8443") {
+		t.Errorf("expected Caddyfile with HTTPS to contain https_port 8443: %s", caddyfileHTTPS)
+	}
+	if !strings.Contains(caddyfileHTTPS, "https://example.com") {
+		t.Errorf("expected Caddyfile with HTTPS to contain https://example.com: %s", caddyfileHTTPS)
+	}
+	if !strings.Contains(caddyfileHTTPS, "header_up X-Forwarded-Proto https") {
+		t.Errorf("expected Caddyfile with HTTPS to contain header_up X-Forwarded-Proto https, got: %s", caddyfileHTTPS)
+	}
+	if !strings.Contains(caddyfileHTTPS, "header_up X-Forwarded-Port 443") {
+		t.Errorf("expected Caddyfile with HTTPS to contain header_up X-Forwarded-Port 443, got: %s", caddyfileHTTPS)
 	}
 
 	err = r.Remove("example.com")

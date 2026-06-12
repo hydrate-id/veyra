@@ -12,6 +12,7 @@ import (
 var httpPort int
 var httpsPort int
 var adminPort int
+var httpsEnabled bool
 
 var startCmd = &cobra.Command{
 	Use:   "start",
@@ -37,6 +38,13 @@ var startCmd = &cobra.Command{
 			osExit(1)
 		}
 
+		err = reg.SetHTTPSEnabled(httpsEnabled)
+		if err != nil {
+			cleanup()
+			cmd.PrintErrf("Error saving HTTPS setting: %v\n", err)
+			osExit(1)
+		}
+
 		caddyfileContent, err := reg.GenerateCaddyfile()
 		if err != nil {
 			cleanup()
@@ -47,7 +55,11 @@ var startCmd = &cobra.Command{
 		cleanup()
 
 		cmd.Println("Starting Veyra reverse proxy daemon...")
-		cmd.Printf("HTTP Port: %d, HTTPS Port: %d\n", httpPort, httpsPort)
+		if httpsEnabled {
+			cmd.Printf("HTTP Port: %d, HTTPS Port: %d\n", httpPort, httpsPort)
+		} else {
+			cmd.Printf("HTTP Port: %d (HTTPS disabled)\n", httpPort)
+		}
 		cmd.Printf("Admin API: http://localhost:%d\n", adminPort)
 
 		err = caddy.Start(caddyfileContent)
@@ -74,5 +86,6 @@ func init() {
 	startCmd.Flags().IntVar(&httpPort, "http-port", 8080, "HTTP port for Caddy")
 	startCmd.Flags().IntVar(&httpsPort, "https-port", 8443, "HTTPS port for Caddy")
 	startCmd.Flags().IntVar(&adminPort, "admin-port", 2019, "Admin API port for Caddy")
+	startCmd.Flags().BoolVar(&httpsEnabled, "https", false, "enable HTTPS")
 	RootCmd.AddCommand(startCmd)
 }

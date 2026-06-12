@@ -27,7 +27,11 @@ var reloadCmd = &cobra.Command{
 
 		err = caddy.Reload(caddyfileContent, adminPort)
 		if err != nil {
-			cmd.PrintErrf("Error reloading Caddy: %v\n", err)
+			if verbose {
+				cmd.PrintErrf("Error reloading Caddy: %v\n", err)
+			} else {
+				cmd.PrintErrf("Error: Could not reload Caddy configuration (is 'veyra start' running?)\n")
+			}
 			osExit(1)
 		}
 

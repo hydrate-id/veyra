@@ -99,6 +99,21 @@ func (r *Registry) GetAdminPort() (int, error) {
 	return port, nil
 }
 
+func (r *Registry) SetHTTPSEnabled(enabled bool) error {
+	return r.store.SetSetting("https_enabled", strconv.FormatBool(enabled))
+}
+
+func (r *Registry) IsHTTPSEnabled() (bool, error) {
+	str, err := r.store.GetSetting("https_enabled")
+	if err != nil {
+		return false, err
+	}
+	if str == "" {
+		return false, nil
+	}
+	return strconv.ParseBool(str)
+}
+
 type BackupData struct {
 	Rules    []model.Rule      `json:"rules"`
 	Settings map[string]string `json:"settings"`

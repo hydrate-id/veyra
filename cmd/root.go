@@ -10,6 +10,7 @@ import (
 )
 
 var dbPath string
+var verbose bool
 var osExit = os.Exit
 
 var RootCmd = &cobra.Command{
@@ -28,6 +29,7 @@ func Execute() {
 
 func init() {
 	RootCmd.PersistentFlags().StringVar(&dbPath, "db", "veyra.db", "path to BoltDB file")
+	RootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "verbose output")
 }
 
 func InitRegistry() (*core.Registry, func(), error) {
