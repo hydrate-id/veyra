@@ -24,8 +24,8 @@ func TestRegistryAndGenerator(t *testing.T) {
 	if err != nil {
 		t.Errorf("failed to get default ports: %v", err)
 	}
-	if hp != 80 || sp != 443 {
-		t.Errorf("got default ports %d, %d; want 80, 443", hp, sp)
+	if hp != 8080 || sp != 8443 {
+		t.Errorf("got default ports %d, %d; want 8080, 8443", hp, sp)
 	}
 
 	err = r.SetPorts(8080, 8443)

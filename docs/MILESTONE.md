@@ -22,6 +22,6 @@ Milestone 2
 
 Milestone 3
 
-- [ ] Docker image
-- [ ] Better CLI
-- [ ] Config export/import
+- [x] Docker image
+- [x] Better CLI
+- [x] Config export/import

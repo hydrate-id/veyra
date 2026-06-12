@@ -127,3 +127,15 @@ func (s *Store) GetSetting(key string) (string, error) {
 	})
 	return val, err
 }
+
+func (s *Store) ListSettings() (map[string]string, error) {
+	settings := make(map[string]string)
+	err := s.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket(bucketSettings)
+		return b.ForEach(func(k, v []byte) error {
+			settings[string(k)] = string(v)
+			return nil
+		})
+	})
+	return settings, err
+}

@@ -55,12 +55,67 @@ func TestCLICommands(t *testing.T) {
 		t.Errorf("unexpected list output: %q", output)
 	}
 
+	output, err = executeCommand("validate")
+	if err != nil {
+		t.Fatalf("validate command failed: %v", err)
+	}
+	if !strings.Contains(output, "All rules and Caddyfile configuration are valid.") {
+		t.Errorf("unexpected validate output: %q", output)
+	}
+
+	output, err = executeCommand("export", "caddy")
+	if err != nil {
+		t.Fatalf("export caddy failed: %v", err)
+	}
+	if !strings.Contains(output, "vtest.localhost") {
+		t.Errorf("expected exported Caddyfile to contain vtest.localhost: %s", output)
+	}
+
+	output, err = executeCommand("export", "json")
+	if err != nil {
+		t.Fatalf("export json failed: %v", err)
+	}
+	if !strings.Contains(output, "vtest.localhost") {
+		t.Errorf("expected exported JSON to contain vtest.localhost: %s", output)
+	}
+
+	backupFile := "test_backup.json"
+	defer os.Remove(backupFile)
+
+	output, err = executeCommand("export", "backup", backupFile)
+	if err != nil {
+		t.Fatalf("export backup failed: %v", err)
+	}
+
 	output, err = executeCommand("remove", "vtest.localhost")
 	if err != nil {
 		t.Fatalf("remove command failed: %v", err)
 	}
-	if !strings.Contains(output, "Removed rule for public pattern: vtest.localhost") {
-		t.Errorf("unexpected remove output: %q", output)
+
+	output, err = executeCommand("list")
+	if err != nil {
+		t.Fatalf("list command failed: %v", err)
+	}
+	if strings.Contains(output, "vtest.localhost") {
+		t.Errorf("expected vtest.localhost to be removed: %s", output)
+	}
+
+	output, err = executeCommand("import", "backup", backupFile)
+	if err != nil {
+		t.Fatalf("import backup failed: %v", err)
+	}
+
+	output, err = executeCommand("list")
+	if err != nil {
+		t.Fatalf("list command failed: %v", err)
+	}
+	if !strings.Contains(output, "vtest.localhost") {
+		t.Errorf("expected vtest.localhost to be imported: %s", output)
+	}
+
+	output, err = executeCommand("remove", "vtest.localhost")
+	if err != nil {
+		t.Fatalf("remove command failed: %v", err)
 	}
 }
 

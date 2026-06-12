@@ -71,8 +71,8 @@ var startCmd = &cobra.Command{
 }
 
 func init() {
-	startCmd.Flags().IntVar(&httpPort, "http-port", 80, "HTTP port for Caddy")
-	startCmd.Flags().IntVar(&httpsPort, "https-port", 443, "HTTPS port for Caddy")
+	startCmd.Flags().IntVar(&httpPort, "http-port", 8080, "HTTP port for Caddy")
+	startCmd.Flags().IntVar(&httpsPort, "https-port", 8443, "HTTPS port for Caddy")
 	startCmd.Flags().IntVar(&adminPort, "admin-port", 2019, "Admin API port for Caddy")
 	RootCmd.AddCommand(startCmd)
 }

@@ -56,21 +56,21 @@ func (r *Registry) SetPorts(httpPort, httpsPort int) error {
 func (r *Registry) GetPorts() (int, int, error) {
 	httpStr, err := r.store.GetSetting("http_port")
 	if err != nil {
-		return 80, 443, err
+		return 8080, 8443, err
 	}
 	httpsStr, err := r.store.GetSetting("https_port")
 	if err != nil {
-		return 80, 443, err
+		return 8080, 8443, err
 	}
 
-	httpPort := 80
+	httpPort := 8080
 	if httpStr != "" {
 		if p, err := strconv.Atoi(httpStr); err == nil {
 			httpPort = p
 		}
 	}
 
-	httpsPort := 443
+	httpsPort := 8443
 	if httpsStr != "" {
 		if p, err := strconv.Atoi(httpsStr); err == nil {
 			httpsPort = p
@@ -97,4 +97,38 @@ func (r *Registry) GetAdminPort() (int, error) {
 		return 2019, nil
 	}
 	return port, nil
+}
+
+type BackupData struct {
+	Rules    []model.Rule      `json:"rules"`
+	Settings map[string]string `json:"settings"`
+}
+
+func (r *Registry) ExportBackup() (*BackupData, error) {
+	rules, err := r.List()
+	if err != nil {
+		return nil, err
+	}
+	settings, err := r.store.ListSettings()
+	if err != nil {
+		return nil, err
+	}
+	return &BackupData{
+		Rules:    rules,
+		Settings: settings,
+	}, nil
+}
+
+func (r *Registry) ImportBackup(data *BackupData) error {
+	for _, rule := range data.Rules {
+		if err := r.store.Save(rule); err != nil {
+			return err
+		}
+	}
+	for k, v := range data.Settings {
+		if err := r.store.SetSetting(k, v); err != nil {
+			return err
+		}
+	}
+	return nil
 }
