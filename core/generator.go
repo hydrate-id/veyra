@@ -66,7 +66,9 @@ func (r *Registry) GenerateCaddyfile() (string, error) {
 			}
 		}
 
-		sb.WriteString(fmt.Sprintf("%s {\n", rule.PublicPattern))
+		// Explicitly define both HTTP and HTTPS schemes to disable Caddy's automatic HTTP->HTTPS
+		// redirects which default to port 443 and bypass Veyra's custom ports.
+		sb.WriteString(fmt.Sprintf("http://%s, https://%s {\n", rule.PublicPattern, rule.PublicPattern))
 		sb.WriteString(fmt.Sprintf("\treverse_proxy %s {\n", targetForCaddy))
 		sb.WriteString(fmt.Sprintf("\t\theader_up Host %s\n", hostHeaderForCaddy))
 		// Rewrite redirect location response headers dynamically using {host}
