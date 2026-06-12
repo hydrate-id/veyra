@@ -34,7 +34,7 @@ func (r *Registry) GenerateCaddyfile() (string, error) {
 
 	var sb strings.Builder
 
-	// Add global block to explicitly configure the admin API on localhost and custom ports
+	// Add global block to explicitly configure the admin API on localhost, custom ports, and trusted proxies
 	sb.WriteString("{\n")
 	sb.WriteString(fmt.Sprintf("\tadmin localhost:%d\n", adminPort))
 	if httpPort != 80 {
@@ -43,6 +43,9 @@ func (r *Registry) GenerateCaddyfile() (string, error) {
 	if httpsPort != 443 {
 		sb.WriteString(fmt.Sprintf("\thttps_port %d\n", httpsPort))
 	}
+	sb.WriteString("\tservers {\n")
+	sb.WriteString("\t\ttrusted_proxies static private_ranges\n")
+	sb.WriteString("\t}\n")
 	sb.WriteString("}\n\n")
 
 	for _, rule := range rules {
