@@ -12,11 +12,10 @@ on:
         type: string
 
 jobs:
-  build-and-push:
+  docker-build-and-push:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: write
       packages: write
 
     steps:
@@ -83,6 +82,18 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.tags.outputs.tags }}
+
+  binary-build-and-release:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.version || github.ref_name }}
 
       - name: Set up Go
         uses: actions/setup-go@v5
