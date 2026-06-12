@@ -45,6 +45,11 @@ func TestRegistryAndGenerator(t *testing.T) {
 		t.Fatalf("failed to add rule: %v", err)
 	}
 
+	err = r.Add("secure.example.com", "https://localhost:8001")
+	if err != nil {
+		t.Fatalf("failed to add secure rule: %v", err)
+	}
+
 	rule, err := r.Get("example.com")
 	if err != nil {
 		t.Fatalf("failed to get rule: %v", err)
@@ -57,8 +62,8 @@ func TestRegistryAndGenerator(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to list rules: %v", err)
 	}
-	if len(list) != 1 {
-		t.Errorf("got list length %d; want 1", len(list))
+	if len(list) != 2 {
+		t.Errorf("got list length %d; want 2", len(list))
 	}
 
 	caddyfile, err := r.GenerateCaddyfile()
@@ -89,10 +94,23 @@ func TestRegistryAndGenerator(t *testing.T) {
 	if !strings.Contains(caddyfile, "body_rewriter localhost:8000 {host}") {
 		t.Errorf("expected Caddyfile to contain body_rewriter localhost:8000 {host}, got: %s", caddyfile)
 	}
+	if !strings.Contains(caddyfile, "header_up X-Forwarded-Proto https") {
+		t.Errorf("expected Caddyfile to contain header_up X-Forwarded-Proto https, got: %s", caddyfile)
+	}
+	if !strings.Contains(caddyfile, "header_up X-Forwarded-Port 80") {
+		t.Errorf("expected Caddyfile to contain header_up X-Forwarded-Port 80, got: %s", caddyfile)
+	}
+	if !strings.Contains(caddyfile, "header_up X-Forwarded-Port 443") {
+		t.Errorf("expected Caddyfile to contain header_up X-Forwarded-Port 443, got: %s", caddyfile)
+	}
 
 	err = r.Remove("example.com")
 	if err != nil {
 		t.Fatalf("failed to remove rule: %v", err)
+	}
+	err = r.Remove("secure.example.com")
+	if err != nil {
+		t.Fatalf("failed to remove secure rule: %v", err)
 	}
 	rule, err = r.Get("example.com")
 	if err != nil {

@@ -76,6 +76,12 @@ func (r *Registry) GenerateCaddyfile() (string, error) {
 		sb.WriteString(fmt.Sprintf("\treverse_proxy %s {\n", targetForCaddy))
 		sb.WriteString(fmt.Sprintf("\t\theader_up Host %s\n", hostHeaderForCaddy))
 		sb.WriteString(fmt.Sprintf("\t\theader_up X-Forwarded-Host %s\n", hostHeaderForCaddy))
+		if isHTTPS {
+			sb.WriteString("\t\theader_up X-Forwarded-Proto https\n")
+			sb.WriteString("\t\theader_up X-Forwarded-Port 443\n")
+		} else {
+			sb.WriteString("\t\theader_up X-Forwarded-Port 80\n")
+		}
 		sb.WriteString("\t\theader_up -Accept-Encoding\n")
 		sb.WriteString(fmt.Sprintf("\t\theader_down Location \"http://%s(.*)\" \"https://{host}$1\"\n", hostHeaderForCaddy))
 		sb.WriteString(fmt.Sprintf("\t\theader_down Location \"https://%s(.*)\" \"https://{host}$1\"\n", hostHeaderForCaddy))
