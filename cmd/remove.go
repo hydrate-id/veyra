@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"os"
-
 	"github.com/korfra/veyra/caddy"
 	"github.com/spf13/cobra"
 )
@@ -17,26 +15,26 @@ var removeCmd = &cobra.Command{
 		reg, cleanup, err := InitRegistry()
 		if err != nil {
 			cmd.PrintErrf("Error: %v\n", err)
-			os.Exit(1)
+			osExit(1)
 		}
 
 		existing, err := reg.Get(public)
 		if err != nil {
 			cleanup()
 			cmd.PrintErrf("Error checking rule: %v\n", err)
-			os.Exit(1)
+			osExit(1)
 		}
 		if existing == nil {
 			cleanup()
 			cmd.PrintErrf("Error: rule for '%s' not found\n", public)
-			os.Exit(1)
+			osExit(1)
 		}
 
 		err = reg.Remove(public)
 		if err != nil {
 			cleanup()
 			cmd.PrintErrf("Error removing rule: %v\n", err)
-			os.Exit(1)
+			osExit(1)
 		}
 
 		cmd.Printf("Removed rule for public pattern: %s\n", public)
@@ -45,7 +43,7 @@ var removeCmd = &cobra.Command{
 		if err != nil {
 			cleanup()
 			cmd.PrintErrf("Error generating Caddyfile: %v\n", err)
-			os.Exit(1)
+			osExit(1)
 		}
 
 		adminPort, _ := reg.GetAdminPort()

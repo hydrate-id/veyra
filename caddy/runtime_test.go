@@ -88,3 +88,36 @@ func TestCaddyErrors(t *testing.T) {
 		t.Error("expected error reloading Caddy when stopped, got nil")
 	}
 }
+
+func TestReloadErrorResponse(t *testing.T) {
+	caddyfileValid := `
+{
+	admin localhost:2023
+	http_port 8085
+}
+localhost:8085 {
+	respond "OK"
+}
+`
+	err := Start(caddyfileValid)
+	if err != nil {
+		t.Fatalf("failed to start Caddy: %v", err)
+	}
+	defer func() {
+		_ = Stop()
+	}()
+
+	caddyfileInvalidLoad := `
+{
+	admin localhost:2023
+	http_port 80
+}
+localhost:80 {
+	respond "OK"
+}
+`
+	err = Reload(caddyfileInvalidLoad, 2023)
+	if err == nil {
+		t.Error("expected error reloading Caddy with port 80 binding, got nil")
+	}
+}

@@ -54,6 +54,14 @@ func TestStore(t *testing.T) {
 		t.Errorf("got setting = %q; want 8080", val)
 	}
 
+	settings, err := s.ListSettings()
+	if err != nil {
+		t.Fatalf("failed to list settings: %v", err)
+	}
+	if settings["http_port"] != "8080" {
+		t.Errorf("expected http_port to be 8080, got: %s", settings["http_port"])
+	}
+
 	err = s.Delete("test.localhost")
 	if err != nil {
 		t.Fatalf("failed to delete rule: %v", err)

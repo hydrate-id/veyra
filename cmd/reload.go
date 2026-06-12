@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"os"
-
 	"github.com/korfra/veyra/caddy"
 	"github.com/spf13/cobra"
 )
@@ -14,14 +12,14 @@ var reloadCmd = &cobra.Command{
 		reg, cleanup, err := InitRegistry()
 		if err != nil {
 			cmd.PrintErrf("Error: %v\n", err)
-			os.Exit(1)
+			osExit(1)
 		}
 
 		caddyfileContent, err := reg.GenerateCaddyfile()
 		if err != nil {
 			cleanup()
 			cmd.PrintErrf("Error generating Caddyfile: %v\n", err)
-			os.Exit(1)
+			osExit(1)
 		}
 
 		adminPort, _ := reg.GetAdminPort()
@@ -30,7 +28,7 @@ var reloadCmd = &cobra.Command{
 		err = caddy.Reload(caddyfileContent, adminPort)
 		if err != nil {
 			cmd.PrintErrf("Error reloading Caddy: %v\n", err)
-			os.Exit(1)
+			osExit(1)
 		}
 
 		cmd.Println("Caddy configuration reloaded successfully.")

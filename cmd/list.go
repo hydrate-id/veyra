@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"text/tabwriter"
 
 	"github.com/spf13/cobra"
@@ -15,14 +14,14 @@ var listCmd = &cobra.Command{
 		reg, cleanup, err := InitRegistry()
 		if err != nil {
 			cmd.PrintErrf("Error: %v\n", err)
-			os.Exit(1)
+			osExit(1)
 		}
 		defer cleanup()
 
 		rules, err := reg.List()
 		if err != nil {
 			cmd.PrintErrf("Error listing rules: %v\n", err)
-			os.Exit(1)
+			osExit(1)
 		}
 
 		if len(rules) == 0 {

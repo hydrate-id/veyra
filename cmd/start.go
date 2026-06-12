@@ -20,28 +20,28 @@ var startCmd = &cobra.Command{
 		reg, cleanup, err := InitRegistry()
 		if err != nil {
 			cmd.PrintErrf("Error: %v\n", err)
-			os.Exit(1)
+			osExit(1)
 		}
 
 		err = reg.SetPorts(httpPort, httpsPort)
 		if err != nil {
 			cleanup()
 			cmd.PrintErrf("Error saving port settings: %v\n", err)
-			os.Exit(1)
+			osExit(1)
 		}
 
 		err = reg.SetAdminPort(adminPort)
 		if err != nil {
 			cleanup()
 			cmd.PrintErrf("Error saving admin port settings: %v\n", err)
-			os.Exit(1)
+			osExit(1)
 		}
 
 		caddyfileContent, err := reg.GenerateCaddyfile()
 		if err != nil {
 			cleanup()
 			cmd.PrintErrf("Error generating initial Caddyfile: %v\n", err)
-			os.Exit(1)
+			osExit(1)
 		}
 
 		cleanup()
@@ -53,7 +53,7 @@ var startCmd = &cobra.Command{
 		err = caddy.Start(caddyfileContent)
 		if err != nil {
 			cmd.PrintErrf("Error starting embedded Caddy: %v\n", err)
-			os.Exit(1)
+			osExit(1)
 		}
 
 		cmd.Println("Veyra is running. Press Ctrl+C to stop.")

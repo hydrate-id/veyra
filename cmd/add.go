@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"os"
-
 	"github.com/korfra/veyra/caddy"
 	"github.com/spf13/cobra"
 )
@@ -18,14 +16,14 @@ var addCmd = &cobra.Command{
 		reg, cleanup, err := InitRegistry()
 		if err != nil {
 			cmd.PrintErrf("Error: %v\n", err)
-			os.Exit(1)
+			osExit(1)
 		}
 
 		err = reg.Add(public, internal)
 		if err != nil {
 			cleanup()
 			cmd.PrintErrf("Error adding rule: %v\n", err)
-			os.Exit(1)
+			osExit(1)
 		}
 
 		cmd.Printf("Added rule: %s -> %s\n", public, internal)
@@ -34,7 +32,7 @@ var addCmd = &cobra.Command{
 		if err != nil {
 			cleanup()
 			cmd.PrintErrf("Error generating Caddyfile: %v\n", err)
-			os.Exit(1)
+			osExit(1)
 		}
 
 		adminPort, _ := reg.GetAdminPort()

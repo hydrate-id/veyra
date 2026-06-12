@@ -10,6 +10,7 @@ import (
 )
 
 var dbPath string
+var osExit = os.Exit
 
 var RootCmd = &cobra.Command{
 	Use:   "veyra",
@@ -21,7 +22,7 @@ domain mapping, reverse proxy rules, and dynamic config reloading.`,
 func Execute() {
 	if err := RootCmd.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
+		osExit(1)
 	}
 }
 

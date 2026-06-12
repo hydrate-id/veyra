@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"os"
-
 	"github.com/korfra/veyra/caddy"
 	"github.com/korfra/veyra/core"
 	"github.com/korfra/veyra/model"
@@ -16,14 +14,14 @@ var validateCmd = &cobra.Command{
 		reg, cleanup, err := InitRegistry()
 		if err != nil {
 			cmd.PrintErrf("Error: %v\n", err)
-			os.Exit(1)
+			osExit(1)
 		}
 
 		rules, err := reg.List()
 		if err != nil {
 			cleanup()
 			cmd.PrintErrf("Error listing rules: %v\n", err)
-			os.Exit(1)
+			osExit(1)
 		}
 
 		for i, rule := range rules {
@@ -37,7 +35,7 @@ var validateCmd = &cobra.Command{
 			if err := core.ValidateRule(rule, otherRules); err != nil {
 				cleanup()
 				cmd.PrintErrf("Rule validation failed for pattern '%s': %v\n", rule.PublicPattern, err)
-				os.Exit(1)
+				osExit(1)
 			}
 		}
 
@@ -45,7 +43,7 @@ var validateCmd = &cobra.Command{
 		if err != nil {
 			cleanup()
 			cmd.PrintErrf("Caddyfile generation failed: %v\n", err)
-			os.Exit(1)
+			osExit(1)
 		}
 
 		cleanup()
@@ -53,7 +51,7 @@ var validateCmd = &cobra.Command{
 		_, err = caddy.AdaptCaddyfile(caddyfileContent)
 		if err != nil {
 			cmd.PrintErrf("Caddyfile adaptation failed: %v\n", err)
-			os.Exit(1)
+			osExit(1)
 		}
 
 		cmd.Println("All rules and Caddyfile configuration are valid.")

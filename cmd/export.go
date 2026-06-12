@@ -21,7 +21,7 @@ var exportCmd = &cobra.Command{
 		reg, cleanup, err := InitRegistry()
 		if err != nil {
 			cmd.PrintErrf("Error: %v\n", err)
-			os.Exit(1)
+			osExit(1)
 		}
 		defer cleanup()
 
@@ -32,7 +32,7 @@ var exportCmd = &cobra.Command{
 			caddyfileContent, err := reg.GenerateCaddyfile()
 			if err != nil {
 				cmd.PrintErrf("Error generating Caddyfile: %v\n", err)
-				os.Exit(1)
+				osExit(1)
 			}
 			output = []byte(caddyfileContent)
 
@@ -40,12 +40,12 @@ var exportCmd = &cobra.Command{
 			rules, err := reg.List()
 			if err != nil {
 				cmd.PrintErrf("Error listing rules: %v\n", err)
-				os.Exit(1)
+				osExit(1)
 			}
 			data, err := json.MarshalIndent(rules, "", "  ")
 			if err != nil {
 				cmd.PrintErrf("Error marshaling rules to JSON: %v\n", err)
-				os.Exit(1)
+				osExit(1)
 			}
 			output = data
 
@@ -53,25 +53,25 @@ var exportCmd = &cobra.Command{
 			backup, err := reg.ExportBackup()
 			if err != nil {
 				cmd.PrintErrf("Error exporting backup: %v\n", err)
-				os.Exit(1)
+				osExit(1)
 			}
 			data, err := json.MarshalIndent(backup, "", "  ")
 			if err != nil {
 				cmd.PrintErrf("Error marshaling backup to JSON: %v\n", err)
-				os.Exit(1)
+				osExit(1)
 			}
 			output = data
 
 		default:
 			cmd.PrintErrf("Error: Invalid format '%s'. Valid formats are: caddy, json, backup\n", format)
-			os.Exit(1)
+			osExit(1)
 		}
 
 		if filePath != "" {
 			err = os.WriteFile(filePath, output, 0644)
 			if err != nil {
 				cmd.PrintErrf("Error writing to file '%s': %v\n", filePath, err)
-				os.Exit(1)
+				osExit(1)
 			}
 			cmd.Printf("Configuration exported successfully to '%s'\n", filePath)
 		} else {

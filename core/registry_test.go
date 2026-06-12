@@ -119,12 +119,62 @@ func TestRegistryAndGenerator(t *testing.T) {
 	if rule != nil {
 		t.Errorf("expected rule to be nil, got %v", rule)
 	}
+	err = r.SetAdminPort(2022)
+	if err != nil {
+		t.Fatalf("failed to set admin port: %v", err)
+	}
+	port, err := r.GetAdminPort()
+	if err != nil {
+		t.Fatalf("failed to get admin port: %v", err)
+	}
+	if port != 2022 {
+		t.Errorf("got admin port %d; want 2022", port)
+	}
+
+	err = r.Add("backup.localhost", "localhost:5000")
+	if err != nil {
+		t.Fatalf("failed to add rule for backup: %v", err)
+	}
+
+	backup, err := r.ExportBackup()
+	if err != nil {
+		t.Fatalf("failed to export backup: %v", err)
+	}
+	if len(backup.Rules) != 1 || backup.Rules[0].PublicPattern != "backup.localhost" {
+		t.Errorf("unexpected backup rules: %v", backup.Rules)
+	}
+	if backup.Settings["admin_port"] != "2022" {
+		t.Errorf("expected admin_port to be 2022 in backup settings, got: %s", backup.Settings["admin_port"])
+	}
+
+	err = r.Remove("backup.localhost")
+	if err != nil {
+		t.Fatalf("failed to remove rule: %v", err)
+	}
+
+	err = r.ImportBackup(backup)
+	if err != nil {
+		t.Fatalf("failed to import backup: %v", err)
+	}
+
+	rule, err = r.Get("backup.localhost")
+	if err != nil {
+		t.Fatalf("failed to get imported rule: %v", err)
+	}
+	if rule == nil || rule.InternalTarget != "localhost:5000" {
+		t.Errorf("imported rule mismatch: %v", rule)
+	}
+
+	err = r.Remove("backup.localhost")
+	if err != nil {
+		t.Fatalf("failed to clean up imported rule: %v", err)
+	}
 
 	err = s.SetSetting("admin_port", "not-a-number")
 	if err != nil {
 		t.Fatalf("failed to set invalid admin port setting: %v", err)
 	}
-	port, err := r.GetAdminPort()
+	port, err = r.GetAdminPort()
 	if err != nil {
 		t.Errorf("expected no error when admin port is invalid, got: %v", err)
 	}

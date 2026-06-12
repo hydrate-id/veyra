@@ -21,13 +21,13 @@ var importCmd = &cobra.Command{
 		data, err := os.ReadFile(filePath)
 		if err != nil {
 			cmd.PrintErrf("Error reading file '%s': %v\n", filePath, err)
-			os.Exit(1)
+			osExit(1)
 		}
 
 		reg, cleanup, err := InitRegistry()
 		if err != nil {
 			cmd.PrintErrf("Error: %v\n", err)
-			os.Exit(1)
+			osExit(1)
 		}
 
 		switch format {
@@ -37,7 +37,7 @@ var importCmd = &cobra.Command{
 			if err != nil {
 				cleanup()
 				cmd.PrintErrf("Error parsing rules JSON: %v\n", err)
-				os.Exit(1)
+				osExit(1)
 			}
 			for _, rule := range rules {
 				err = reg.Add(rule.PublicPattern, rule.InternalTarget)
@@ -54,27 +54,27 @@ var importCmd = &cobra.Command{
 			if err != nil {
 				cleanup()
 				cmd.PrintErrf("Error parsing backup JSON: %v\n", err)
-				os.Exit(1)
+				osExit(1)
 			}
 			err = reg.ImportBackup(&backup)
 			if err != nil {
 				cleanup()
 				cmd.PrintErrf("Error importing backup: %v\n", err)
-				os.Exit(1)
+				osExit(1)
 			}
 			cmd.Println("Backup configuration imported successfully.")
 
 		default:
 			cleanup()
 			cmd.PrintErrf("Error: Invalid format '%s'. Valid formats are: json, backup\n", format)
-			os.Exit(1)
+			osExit(1)
 		}
 
 		caddyfileContent, err := reg.GenerateCaddyfile()
 		if err != nil {
 			cleanup()
 			cmd.PrintErrf("Error generating Caddyfile: %v\n", err)
-			os.Exit(1)
+			osExit(1)
 		}
 
 		adminPort, _ := reg.GetAdminPort()

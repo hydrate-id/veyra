@@ -7,11 +7,21 @@ import (
 	"syscall"
 	"testing"
 	"time"
+
+	"github.com/korfra/veyra/caddy"
+	"github.com/korfra/veyra/model"
+	"github.com/korfra/veyra/store"
 )
 
 func TestCLICommands(t *testing.T) {
 	dbPath = "test_cli.db"
 	defer os.Remove(dbPath)
+
+	caddyfile := "{\n\tadmin localhost:2019\n\thttp_port 8089\n\thttps_port 8449\n}\n"
+	_ = caddy.Start(caddyfile)
+	defer func() {
+		_ = caddy.Stop()
+	}()
 
 	executeCommand := func(args ...string) (string, error) {
 		buf := new(bytes.Buffer)
@@ -79,6 +89,14 @@ func TestCLICommands(t *testing.T) {
 		t.Errorf("expected exported JSON to contain vtest.localhost: %s", output)
 	}
 
+	jsonFile := "test_rules.json"
+	defer os.Remove(jsonFile)
+
+	output, err = executeCommand("export", "json", jsonFile)
+	if err != nil {
+		t.Fatalf("export json to file failed: %v", err)
+	}
+
 	backupFile := "test_backup.json"
 	defer os.Remove(backupFile)
 
@@ -98,6 +116,19 @@ func TestCLICommands(t *testing.T) {
 	}
 	if strings.Contains(output, "vtest.localhost") {
 		t.Errorf("expected vtest.localhost to be removed: %s", output)
+	}
+
+	output, err = executeCommand("import", "json", jsonFile)
+	if err != nil {
+		t.Fatalf("import json failed: %v", err)
+	}
+
+	output, err = executeCommand("import", "json", jsonFile)
+	if err != nil {
+		t.Fatalf("import json duplicate failed: %v", err)
+	}
+	if !strings.Contains(output, "Failed to import rule") {
+		t.Errorf("expected duplicate import warning, got: %q", output)
 	}
 
 	output, err = executeCommand("import", "backup", backupFile)
@@ -139,4 +170,116 @@ func TestStartCommand(t *testing.T) {
 	}
 
 	time.Sleep(500 * time.Millisecond)
+}
+
+func TestCLIExitErrors(t *testing.T) {
+	dbPath = "test_cli_errors.db"
+	defer os.Remove(dbPath)
+
+	oldExit := osExit
+	defer func() { osExit = oldExit }()
+
+	var exitedCode int
+	osExit = func(code int) {
+		exitedCode = code
+		panic("exited")
+	}
+
+	runWithExitCheck := func(args ...string) (code int) {
+		exitedCode = 0
+		defer func() {
+			if r := recover(); r != nil {
+				t.Logf("recovered panic: %v", r)
+				code = exitedCode
+			}
+		}()
+		buf := new(bytes.Buffer)
+		RootCmd.SetOut(buf)
+		RootCmd.SetErr(buf)
+		RootCmd.SetArgs(args)
+		err := RootCmd.Execute()
+		if err != nil {
+			t.Logf("execute error: %v", err)
+		}
+		t.Logf("output: %q", buf.String())
+		return exitedCode
+	}
+
+	if code := runWithExitCheck("get", "nonexistent.localhost"); code != 1 {
+		t.Errorf("expected exit code 1 for nonexistent get, got: %d", code)
+	}
+
+	if code := runWithExitCheck("remove", "nonexistent.localhost"); code != 1 {
+		t.Errorf("expected exit code 1 for nonexistent remove, got: %d", code)
+	}
+
+	if code := runWithExitCheck("add", "http://invalid.localhost", "localhost:3000"); code != 1 {
+		t.Errorf("expected exit code 1 for invalid add, got: %d", code)
+	}
+
+	if code := runWithExitCheck("import", "json", "nonexistent.json"); code != 1 {
+		t.Errorf("expected exit code 1 for nonexistent import file, got: %d", code)
+	}
+
+	if code := runWithExitCheck("export", "invalid_format"); code != 1 {
+		t.Errorf("expected exit code 1 for invalid export format, got: %d", code)
+	}
+
+	if code := runWithExitCheck("start", "--admin-port", "80"); code != 1 {
+		t.Errorf("expected exit code 1 for start command with invalid admin port, got: %d", code)
+	}
+
+	invalidJsonFile := "test_invalid.json"
+	_ = os.WriteFile(invalidJsonFile, []byte("{invalid-json}"), 0644)
+	defer os.Remove(invalidJsonFile)
+
+	if code := runWithExitCheck("import", "json", invalidJsonFile); code != 1 {
+		t.Errorf("expected exit code 1 for invalid json import, got: %d", code)
+	}
+
+	if code := runWithExitCheck("import", "backup", invalidJsonFile); code != 1 {
+		t.Errorf("expected exit code 1 for invalid backup import, got: %d", code)
+	}
+
+	originalDbPath := dbPath
+	dbPath = "/nonexistent-dir/veyra.db"
+	if code := runWithExitCheck("list"); code != 1 {
+		t.Errorf("expected exit code 1 when db path is invalid, got: %d", code)
+	}
+	dbPath = originalDbPath
+
+	s, err := store.New(dbPath)
+	if err == nil {
+		_ = s.Save(model.Rule{PublicPattern: "http://invalid.localhost", InternalTarget: "localhost:3000"})
+		_ = s.Close()
+	}
+
+	if code := runWithExitCheck("validate"); code != 1 {
+		t.Errorf("expected exit code 1 for invalid rule validation, got: %d", code)
+	}
+}
+
+func TestExecuteError(t *testing.T) {
+	RootCmd.SetArgs(nil)
+	oldExit := osExit
+	defer func() { osExit = oldExit }()
+
+	var exitedCode int
+	osExit = func(code int) {
+		exitedCode = code
+		panic("exited")
+	}
+
+	defer func() {
+		_ = recover()
+		if exitedCode != 1 {
+			t.Errorf("expected exit code 1 for RootCmd.Execute error, got: %d", exitedCode)
+		}
+	}()
+
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+	os.Args = []string{"veyra", "nonexistent-command"}
+
+	Execute()
 }

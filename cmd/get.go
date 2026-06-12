@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"os"
-
 	"github.com/spf13/cobra"
 )
 
@@ -16,19 +14,19 @@ var getCmd = &cobra.Command{
 		reg, cleanup, err := InitRegistry()
 		if err != nil {
 			cmd.PrintErrf("Error: %v\n", err)
-			os.Exit(1)
+			osExit(1)
 		}
 		defer cleanup()
 
 		rule, err := reg.Get(public)
 		if err != nil {
 			cmd.PrintErrf("Error getting rule: %v\n", err)
-			os.Exit(1)
+			osExit(1)
 		}
 
 		if rule == nil {
 			cmd.PrintErrf("Error: rule for '%s' not found\n", public)
-			os.Exit(1)
+			osExit(1)
 		}
 
 		cmd.Printf("Type: static\n")
