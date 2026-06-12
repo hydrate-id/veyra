@@ -14,23 +14,23 @@ var listCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		reg, cleanup, err := InitRegistry()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			cmd.PrintErrf("Error: %v\n", err)
 			os.Exit(1)
 		}
 		defer cleanup()
 
 		rules, err := reg.List()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error listing rules: %v\n", err)
+			cmd.PrintErrf("Error listing rules: %v\n", err)
 			os.Exit(1)
 		}
 
 		if len(rules) == 0 {
-			fmt.Println("No rules registered.")
+			cmd.Println("No rules registered.")
 			return
 		}
 
-		w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
+		w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 0, 4, ' ', 0)
 		for _, rule := range rules {
 			fmt.Fprintf(w, "%s\t->\t%s\n", rule.PublicPattern, rule.InternalTarget)
 		}

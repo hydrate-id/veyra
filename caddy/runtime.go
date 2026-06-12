@@ -47,13 +47,13 @@ func Stop() error {
 	return caddy.Stop()
 }
 
-func Reload(caddyfileContent string) error {
+func Reload(caddyfileContent string, adminPort int) error {
 	jsonBytes, err := AdaptCaddyfile(caddyfileContent)
 	if err != nil {
 		return fmt.Errorf("failed to adapt Caddyfile: %w", err)
 	}
 
-	resp, err := http.Post("http://localhost:2019/load", "application/json", bytes.NewBuffer(jsonBytes))
+	resp, err := http.Post(fmt.Sprintf("http://localhost:%d/load", adminPort), "application/json", bytes.NewBuffer(jsonBytes))
 	if err != nil {
 		return fmt.Errorf("failed to send reload request to Caddy admin API: %w (is 'veyra start' running?)", err)
 	}

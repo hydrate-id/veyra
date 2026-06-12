@@ -16,9 +16,9 @@ Milestone 1 (MVP)
 
 Milestone 2
 
-- [ ] Wildcard capture
-- [ ] Wildcard flatten
-- [ ] Validation & conflict detection
+- [x] Wildcard capture
+- [x] Wildcard flatten
+- [x] Validation & conflict detection
 
 Milestone 3
 

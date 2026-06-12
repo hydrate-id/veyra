@@ -16,10 +16,21 @@ func New(store *store.Store) *Registry {
 }
 
 func (r *Registry) Add(publicPattern, internalTarget string) error {
-	return r.store.Save(model.Rule{
+	rules, err := r.List()
+	if err != nil {
+		return err
+	}
+
+	newRule := model.Rule{
 		PublicPattern:  publicPattern,
 		InternalTarget: internalTarget,
-	})
+	}
+
+	if err := ValidateRule(newRule, rules); err != nil {
+		return err
+	}
+
+	return r.store.Save(newRule)
 }
 
 func (r *Registry) Get(publicPattern string) (*model.Rule, error) {
@@ -67,4 +78,23 @@ func (r *Registry) GetPorts() (int, int, error) {
 	}
 
 	return httpPort, httpsPort, nil
+}
+
+func (r *Registry) SetAdminPort(port int) error {
+	return r.store.SetSetting("admin_port", strconv.Itoa(port))
+}
+
+func (r *Registry) GetAdminPort() (int, error) {
+	str, err := r.store.GetSetting("admin_port")
+	if err != nil {
+		return 2019, err
+	}
+	if str == "" {
+		return 2019, nil
+	}
+	port, err := strconv.Atoi(str)
+	if err != nil {
+		return 2019, nil
+	}
+	return port, nil
 }

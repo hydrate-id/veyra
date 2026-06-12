@@ -6,3 +6,6 @@ veyra.db
 
 # OS files
 .DS_Store
+
+# Coverage profile
+coverage.out

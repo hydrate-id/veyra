@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/korfra/veyra/caddy"
@@ -18,34 +17,35 @@ var addCmd = &cobra.Command{
 
 		reg, cleanup, err := InitRegistry()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			cmd.PrintErrf("Error: %v\n", err)
 			os.Exit(1)
 		}
 
 		err = reg.Add(public, internal)
 		if err != nil {
 			cleanup()
-			fmt.Fprintf(os.Stderr, "Error adding rule: %v\n", err)
+			cmd.PrintErrf("Error adding rule: %v\n", err)
 			os.Exit(1)
 		}
 
-		fmt.Printf("Added rule: %s -> %s\n", public, internal)
+		cmd.Printf("Added rule: %s -> %s\n", public, internal)
 
 		caddyfileContent, err := reg.GenerateCaddyfile()
 		if err != nil {
 			cleanup()
-			fmt.Fprintf(os.Stderr, "Error generating Caddyfile: %v\n", err)
+			cmd.PrintErrf("Error generating Caddyfile: %v\n", err)
 			os.Exit(1)
 		}
 
+		adminPort, _ := reg.GetAdminPort()
 		cleanup()
 
-		err = caddy.Reload(caddyfileContent)
+		err = caddy.Reload(caddyfileContent, adminPort)
 		if err != nil {
-			fmt.Printf("Warning: Could not reload Caddy configuration: %v\n", err)
-			fmt.Println("Start the veyra daemon ('veyra start') to apply the rules.")
+			cmd.Printf("Warning: Could not reload Caddy configuration: %v\n", err)
+			cmd.Println("Start the veyra daemon ('veyra start') to apply the rules.")
 		} else {
-			fmt.Println("Caddy configuration reloaded successfully.")
+			cmd.Println("Caddy configuration reloaded successfully.")
 		}
 	},
 }
