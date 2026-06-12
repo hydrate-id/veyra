@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: read
+      contents: write
       packages: write
 
     steps:
@@ -83,3 +83,30 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.tags.outputs.tags }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+
+      - name: Build binaries
+        run: |
+          mkdir -p dist
+          GOOS=linux GOARCH=amd64 go build -o dist/veyra-linux-amd64 main.go
+          GOOS=linux GOARCH=arm64 go build -o dist/veyra-linux-arm64 main.go
+          GOOS=darwin GOARCH=amd64 go build -o dist/veyra-darwin-amd64 main.go
+          GOOS=darwin GOARCH=arm64 go build -o dist/veyra-darwin-arm64 main.go
+          GOOS=windows GOARCH=amd64 go build -o dist/veyra-windows-amd64.exe main.go
+          GOOS=windows GOARCH=arm64 go build -o dist/veyra-windows-arm64.exe main.go
+
+      - name: Upload binaries to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.version || github.ref_name }}
+          files: |
+            dist/veyra-linux-amd64
+            dist/veyra-linux-arm64
+            dist/veyra-darwin-amd64
+            dist/veyra-darwin-arm64
+            dist/veyra-windows-amd64.exe
+            dist/veyra-windows-arm64.exe
