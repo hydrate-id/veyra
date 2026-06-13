@@ -1,4 +1,4 @@
-# Veyra
+# <img src="static/veyra.png" alt="Veyra Logo" height="32" align="center" /> Veyra
 
 Veyra is a single-binary local reverse proxy control plane based on embedded Caddy. It manages domain mapping, reverse proxy rules, and dynamic config reloading for local development and self-hosted environments.
 
